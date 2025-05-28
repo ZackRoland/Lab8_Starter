@@ -54,8 +54,19 @@ function initializeServiceWorker() {
   // B5. TODO - In the event that the service worker registration fails, console
   //            log that it has failed.
   // STEPS B6 ONWARDS WILL BE IN /sw.js
+  /*******************/
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => {
+          console.log('Service worker successfully registered');
+        })
+        .catch((error) => {
+          console.error('Service worker registration unsucessful:', error);
+        });
+    });
+  }
 }
-
 /**
  * Reads 'recipes' from localStorage and returns an array of
  * all of the recipes found (parsed, not in string form). If
@@ -69,14 +80,28 @@ async function getRecipes() {
   // A1. TODO - Check local storage to see if there are any recipes.
   //            If there are recipes, return them.
   /**************************/
-  // The rest of this method will be concerned with requesting the recipes
-  // from the network
-  // A2. TODO - Create an empty array to hold the recipes that you will fetch
-  // A3. TODO - Return a new Promise. If you are unfamiliar with promises, MDN
-  //            has a great article on them. A promise takes one parameter - A
-  //            function (we call these callback functions). That function will
-  //            take two parameters - resolve, and reject. These are functions
-  //            you can call to either resolve the Promise or Reject it.
+  const storedRecipes = localStorage.getItem('recipes');
+  if (storedRecipes) {
+    return JSON.parse(storedRecipes);
+  }
+  let recipes = [];
+
+  try {
+    // Fetch each recipe URL
+    for (const url of RECIPE_URLS) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const recipe = await response.json();
+      recipes.push(recipe);
+    }
+    
+    // Save to localStorage for future visits
+    saveRecipesToStorage(recipes);
+    return recipes;
+  } catch (error) {
+    console.error('Failed to fetch recipes:', error);
+    throw error; // Re-throw to be caught in init()
+  }
   /**************************/
   // A4-A11 will all be *inside* the callback function we passed to the Promise
   // we're returning
