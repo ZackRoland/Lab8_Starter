@@ -57,12 +57,15 @@ function initializeServiceWorker() {
   /*******************/
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => {
-          console.log('Service worker successfully registered');
-        })
-        .catch((error) => {
-          console.error('Service worker registration unsucessful:', error);
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          console.log('SW registered:', registration);
+          
+          // Trigger PWA install prompt (optional)
+          window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            console.log('PWA installable');
+          });
         });
     });
   }
